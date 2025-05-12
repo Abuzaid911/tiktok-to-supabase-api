@@ -1,5 +1,8 @@
 # TikTok to Supabase API
 
+[![Deploy to Vercel](https://github.com/Abuzaid911/tiktok-to-supabase-api/actions/workflows/vercel-deploy.yml/badge.svg)](https://github.com/Abuzaid911/tiktok-to-supabase-api/actions/workflows/vercel-deploy.yml)
+
+
 A REST API that scrapes TikTok videos and stores the data in Supabase.
 
 ## Features
