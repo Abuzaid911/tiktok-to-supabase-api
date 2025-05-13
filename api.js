@@ -188,6 +188,109 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`API Documentation available at http://localhost:${PORT}`);
   });
 }
+// Diagnostic endpoint to test Supabase connection
+app.get('/api/supabase-test', async (req, res) => {
+  try {
+    console.log('Testing Supabase connection');
+    
+    // Import the supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    // Initialize Supabase client
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({
+        success: false,
+        message: 'Supabase credentials not found',
+        envVars: {
+          SUPABASE_URL: !!process.env.SUPABASE_URL,
+          SUPABASE_KEY: !!process.env.SUPABASE_KEY
+        }
+      });
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Test connection by adding a test record
+    const testData = {
+      tiktok_id: 'test-' + Date.now(),
+      username: 'test_user',
+      title: 'Test record',
+      description: 'Testing Supabase connection from Vercel',
+      created_at: new Date().toISOString()
+    };
+    
+    console.log('Inserting test record:', testData);
+    
+    const { data, error } = await supabase
+      .from('tiktok_videos')
+      .insert(testData)
+      .select();
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Supabase test failed',
+        error: error.message,
+        details: error
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Supabase connection successful',
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Supabase test error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Supabase test failed',
+      error: error.message,
+      stack: process.env.DEBUG === 'true' ? error.stack : undefined
+    });
+  }
+});
+
+// Diagnostic endpoint to test scraping
+app.get('/api/test-scrape', async (req, res) => {
+  try {
+    // Log the request
+    console.log('Test scrape endpoint called');
+    
+    // Minimal TikTok URL for testing
+    const testUrl = 'https://www.tiktok.com/@aganeena/video/7414810040390962439';
+    
+    console.log(`Starting test scrape for ${testUrl}`);
+    
+    // Import the scraper function directly
+    const { scrapeAndSaveTikTok } = await import('./tiktok-to-supabase.js');
+    
+    // Start the scraping process
+    const result = await scrapeAndSaveTikTok(testUrl, true);
+    
+    // Include detailed information in the response
+    return res.json({
+      success: true,
+      message: 'Test scrape completed',
+      scraperResult: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Test scrape error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Test scrape failed',
+      error: error.message,
+      stack: process.env.DEBUG === 'true' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // Export for Vercel
 export default app; 
